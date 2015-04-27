@@ -26,10 +26,6 @@ msgstr "Bloquea a los usuarios"
 msgid "Unlock the users"
 msgstr "Desbloquea a los usuarios"
 
-#: models.py:14
-msgid "Site"
-msgstr "Sitio"
-
 #: models.py:15
 msgid "IP Address"
 msgstr "Dirección IP"
