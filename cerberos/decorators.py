@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from django.contrib.sites.models import Site
-from cerberos.models import FailedAccessAttempt
-from cerberos.settings import MAX_FAILED_LOGINS, MEMORY_FOR_FAILED_LOGINS
+import datetime
+
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-import datetime
+
+from cerberos.models import FailedAccessAttempt
+from cerberos.settings import MAX_FAILED_LOGINS, MEMORY_FOR_FAILED_LOGINS, USERNAME_FIELD
+
 
 def watch_logins(func):
 
@@ -21,6 +23,7 @@ def watch_logins(func):
 
         return response
     return new_func
+
 
 def get_failed_access(ip):
     """
@@ -47,20 +50,17 @@ def check_failed_login(request, response, failed_access):
 
     It returns the FailedAccessAttempt instance.
     """
-    site = Site.objects.get_current()
     ip = request.META.get('REMOTE_ADDR', '')
     user_agent = request.META.get('HTTP_USER_AGENT', 'unknown')
-    username = request.POST.get('username')
+    username = request.POST.get(USERNAME_FIELD)
     http_accept = request.META.get('HTTP_ACCEPT', 'unknown'),
     path_info = request.META.get('PATH_INFO', 'unknown')
 
-    
     if not failed_access:
         failed_access = FailedAccessAttempt(ip_address=ip)
 
     if request.method == 'POST' and response.status_code != 302:
         # Failed login
-        failed_access.site = site
         failed_access.user_agent = user_agent
         failed_access.username = username
         failed_access.failed_logins += 1
@@ -73,12 +73,14 @@ def check_failed_login(request, response, failed_access):
             # Lock the user
             failed_access.locked = True
         failed_access.save()
+
     elif request.method == 'POST' and response.status_code == 302 and failed_access.id and not failed_access.locked:
         # The user logged in successfully. Forgets about the access attempts
         failed_access.expired = True
         failed_access.save()
 
     return failed_access
+
 
 def get_locked_response(request, ip, failed_access):
     return render_to_response('cerberos/user-locked.html',
