@@ -12,7 +12,7 @@ def watch_logins(func):
 
     def new_func(request, *args, **kwargs):
         response = func(request, *args, **kwargs)
-        ip = request.META.get('REMOTE_ADDR', '')
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
 
         failed_access = get_failed_access(ip)
 
@@ -50,7 +50,7 @@ def check_failed_login(request, response, failed_access):
 
     It returns the FailedAccessAttempt instance.
     """
-    ip = request.META.get('REMOTE_ADDR', '')
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
     user_agent = request.META.get('HTTP_USER_AGENT', 'unknown')
     username = request.POST.get(USERNAME_FIELD)
     http_accept = request.META.get('HTTP_ACCEPT', 'unknown'),
